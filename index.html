@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DairyCoop - Dairy Cooperative Management System</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .status-active {
+            background-color: #10b981;
+            color: white;
+        }
+        .status-inactive {
+            background-color: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+        
+        // Sample data
+        const initialFarmers = [
+            {
+                id: "1",
+                name: "राज कुमार शर्मा",
+                phone: "9876543210",
+                address: "गांव खुशीपुर, जिला मेरठ",
+                status: "active",
+                registration_date: "2025-01-15",
+                notes: "Premium milk supplier"
+            },
+            {
+                id: "2",
+                name: "सुनीता देवी",
+                phone: "9876543211",
+                address: "गांव नंदपुर, जिला मेरठ",
+                status: "active",
+                registration_date: "2025-02-10",
+                notes: "Regular supplier"
+            },
+            {
+                id: "3",
+                name: "मुकेश यादव",
+                phone: "9876543212",
+                address: "गांव रामपुर, जिला मेरठ",
+                status: "inactive",
+                registration_date: "2025-01-20",
+                notes: "Seasonal supplier"
+            },
+            {
+                id: "4",
+                name: "प्रीति अग्रवाल",
+                phone: "9876543213",
+                address: "गांव सरस्वतीपुर, जिला मेरठ",
+                status: "active",
+                registration_date: "2025-03-05",
+                notes: "High quality milk"
+            },
+            {
+                id: "5",
+                name: "विनोद कुमार",
+                phone: "9876543214",
+                address: "गांव श्यामपुर, जिला मेरठ",
+                status: "active",
+                registration_date: "2025-02-20",
+                notes: "Large quantity supplier"
+            }
+        ];
+
+        const initialCollections = [
+            {
+                id: "1",
+                farmer_id: "1",
+                farmer_name: "राज कुमार शर्मा",
+                collection_date: "2025-09-19",
+                session: "morning",
+                quantity: 15.5,
+                fat_percentage: 4.2,
+                snf_percentage: 8.5,
+                rate: 45,
+                total_amount: 697.5,
+                notes: "Good quality milk"
+            },
+            {
+                id: "2",
+                farmer_id: "2",
+                farmer_name: "सुनीता देवी",
+                collection_date: "2025-09-19",
+                session: "morning",
+                quantity: 12.0,
+                fat_percentage: 3.8,
+                snf_percentage: 8.2,
+                rate: 42,
+                total_amount: 504,
+                notes: ""
+            },
+            {
+                id: "3",
+                farmer_id: "1",
+                farmer_name: "राज कुमार शर्मा",
+                collection_date: "2025-09-19",
+                session: "evening",
+                quantity: 18.0,
+                fat_percentage: 4.0,
+                snf_percentage: 8.3,
+                rate: 44,
+                total_amount: 792,
+                notes: "Evening collection"
+            },
+            {
+                id: "4",
+                farmer_id: "4",
+                farmer_name: "प्रीति अग्रवाल",
+                collection_date: "2025-09-19",
+                session: "morning",
+                quantity: 20.5,
+                fat_percentage: 4.5,
+                snf_percentage: 8.7,
+                rate: 48,
+                total_amount: 984,
+                notes: "Premium quality"
+            },
+            {
+                id: "5",
+                farmer_id: "5",
+                farmer_name: "विनोद कुमार",
+                collection_date: "2025-09-19",
+                session: "morning",
+                quantity: 25.0,
+                fat_percentage: 3.9,
+                snf_percentage: 8.1,
+                rate: 43,
+                total_amount: 1075,
+                notes: "Large quantity"
+            }
+        ];
+
+        const rateChart = [
+            { id: "1", fat_min: 3.5, fat_max: 3.9, snf_min: 8.0, snf_max: 8.2, rate: 41, is_active: true },
+            { id: "2", fat_min: 3.5, fat_max: 3.9, snf_min: 8.3, snf_max: 8.5, rate: 42, is_active: true },
+            { id: "3", fat_min: 4.0, fat_max: 4.2, snf_min: 8.0, snf_max: 8.2, rate: 43, is_active: true },
+            { id: "4", fat_min: 4.0, fat_max: 4.2, snf_min: 8.3, snf_max: 8.5, rate: 44, is_active: true },
+            { id: "5", fat_min: 4.0, fat_max: 4.2, snf_min: 8.6, snf_max: 8.8, rate: 45, is_active: true },
+            { id: "6", fat_min: 4.3, fat_max: 4.5, snf_min: 8.3, snf_max: 8.5, rate: 46, is_active: true },
+            { id: "7", fat_min: 4.3, fat_max: 4.5, snf_min: 8.6, snf_max: 8.8, rate: 48, is_active: true },
+            { id: "8", fat_min: 4.6, fat_max: 5.0, snf_min: 8.6, snf_max: 9.0, rate: 50, is_active: true }
+        ];
+
+        const translations = {
+            en: {
+                dashboard: "Dashboard",
+                farmers: "Farmers",
+                dailyCollection: "Daily Collection",
+                balance: "Balance",
+                reports: "Reports",
+                totalFarmers: "Total Farmers",
+                todaysCollections: "Today's Collections",
+                milkCollected: "Milk Collected",
+                revenueToday: "Revenue Today",
+                active: "Active",
+                inactive: "Inactive",
+                morning: "Morning",
+                evening: "Evening",
+                addNewFarmer: "Add New Farmer",
+                fullName: "Full Name",
+                phoneNumber: "Phone Number",
+                address: "Address",
+                status: "Status",
+                notes: "Notes",
+                save: "Save",
+                cancel: "Cancel",
+                edit: "Edit",
+                search: "Search farmers...",
+                farmer: "Farmer",
+                collectionDate: "Collection Date",
+                session: "Session",
+                quantity: "Quantity (Liters)",
+                fatPercentage: "Fat %",
+                snfPercentage: "SNF %",
+                rate: "Rate per Liter",
+                totalAmount: "Total Amount",
+                selectFarmer: "Select Farmer",
+                checkBalance: "Check Balance",
+                startDate: "Start Date",
+                endDate: "End Date",
+                totalMilk: "Total Milk",
+                totalEarnings: "Total Earnings",
+                averageRate: "Average Rate",
+                comingSoon: "Coming Soon"
+            },
+            hi: {
+                dashboard: "डैशबोर्ड",
+                farmers: "किसान",
+                dailyCollection: "दैनिक संग्रह",
+                balance: "बैलेंस",
+                reports: "रिपोर्ट्स",
+                totalFarmers: "कुल किसान",
+                todaysCollections: "आज का संग्रह",
+                milkCollected: "दूध संग्रह",
+                revenueToday: "आज की आय",
+                active: "सक्रिय",
+                inactive: "निष्क्रिय",
+                morning: "सुबह",
+                evening: "शाम",
+                addNewFarmer: "नया किसान जोड़ें",
+                fullName: "पूरा नाम",
+                phoneNumber: "फोन नंबर",
+                address: "पता",
+                status: "स्थिति",
+                notes: "टिप्पणी",
+                save: "सेव करें",
+                cancel: "रद्द करें",
+                edit: "संपादित करें",
+                search: "किसान खोजें...",
+                farmer: "किसान",
+                collectionDate: "संग्रह दिनांक",
+                session: "सत्र",
+                quantity: "मात्रा (लीटर)",
+                fatPercentage: "फैट %",
+                snfPercentage: "एसएनएफ %",
+                rate: "दर प्रति लीटर",
+                totalAmount: "कुल राशि",
+                selectFarmer: "किसान चुनें",
+                checkBalance: "बैलेंस चेक करें",
+                startDate: "शुरुआती तारीख",
+                endDate: "अंतिम तारीख",
+                totalMilk: "कुल दूध",
+                totalEarnings: "कुल कमाई",
+                averageRate: "औसत दर",
+                comingSoon: "जल्द आ रहा है"
+            }
+        };
+
+        // Utility functions
+        const getCurrentDate = () => {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        };
+
+        const findRate = (fat, snf) => {
+            const match = rateChart.find(rate => 
+                fat >= rate.fat_min && fat <= rate.fat_max &&
+                snf >= rate.snf_min && snf <= rate.snf_max &&
+                rate.is_active
+            );
+            return match ? match.rate : 0;
+        };
+
+        // Components
+        const Clock = () => {
+            const [time, setTime] = useState(new Date());
+
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    setTime(new Date());
+                }, 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            return (
+                <div className="text-lg font-mono text-blue-600">
+                    {time.toLocaleTimeString()}
+                </div>
+            );
+        };
+
+        const StatCard = ({ title, value, subtitle, icon: Icon, color = "blue" }) => (
+            <div className={`bg-white p-6 rounded-lg card-shadow border-l-4 border-${color}-500`}>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-sm font-medium text-gray-600">{title}</p>
+                        <p className="text-2xl font-bold text-gray-900">{value}</p>
+                        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+                    </div>
+                    {Icon && <Icon className={`h-8 w-8 text-${color}-500`} />}
+                </div>
+            </div>
+        );
+
+        const Dashboard = ({ farmers, collections, language }) => {
+            const t = translations[language];
+            const today = getCurrentDate();
+            
+            const todaysCollections = collections.filter(c => c.collection_date === today);
+            const totalFarmers = farmers.length;
+            const activeFarmers = farmers.filter(f => f.status === 'active').length;
+            const totalMilk = todaysCollections.reduce((sum, c) => sum + c.quantity, 0);
+            const totalRevenue = todaysCollections.reduce((sum, c) => sum + c.total_amount, 0);
+            const recentCollections = collections.slice(-10).reverse();
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">{t.dashboard}</h1>
+                            <p className="text-gray-600">
+                                {new Date().toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                })}
+                            </p>
+                        </div>
+                        <Clock />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <StatCard
+                            title={t.totalFarmers}
+                            value={totalFarmers}
+                            subtitle={`${activeFarmers} ${t.active}`}
+                            icon={lucide.Users}
+                            color="blue"
+                        />
+                        <StatCard
+                            title={t.todaysCollections}
+                            value={todaysCollections.length}
+                            icon={lucide.Calendar}
+                            color="green"
+                        />
+                        <StatCard
+                            title={t.milkCollected}
+                            value={`${totalMilk.toFixed(1)}L`}
+                            icon={lucide.Droplets}
+                            color="cyan"
+                        />
+                        <StatCard
+                            title={t.revenueToday}
+                            value={`₹${totalRevenue.toFixed(0)}`}
+                            icon={lucide.DollarSign}
+                            color="yellow"
+                        />
+                    </div>
+
+                    <div className="bg-white rounded-lg card-shadow p-6">
+                        <h2 className="text-xl font-semibold mb-4">Recent Collections</h2>
+                        <div className="space-y-3">
+                            {recentCollections.length > 0 ? (
+                                recentCollections.map(collection => (
+                                    <div key={collection.id} className="flex justify-between items-center p-3 border rounded-lg">
+                                        <div>
+                                            <span className="font-medium">{collection.farmer_name}</span>
+                                            <span className="text-sm text-gray-500 ml-2">
+                                                {collection.session === 'morning' ? t.morning : t.evening}
+                                            </span>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-medium">{collection.quantity}L</div>
+                                            <div className="text-sm text-gray-500">₹{collection.total_amount}</div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-gray-500">No collections yet today</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const FarmersPage = ({ farmers, setFarmers, language }) => {
+            const t = translations[language];
+            const [showForm, setShowForm] = useState(false);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [editingFarmer, setEditingFarmer] = useState(null);
+            const [formData, setFormData] = useState({
+                name: '',
+                phone: '',
+                address: '',
+                status: 'active',
+                notes: ''
+            });
+
+            const filteredFarmers = farmers.filter(farmer =>
+                farmer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                farmer.phone.includes(searchTerm)
+            );
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (editingFarmer) {
+                    setFarmers(farmers.map(f => 
+                        f.id === editingFarmer.id 
+                            ? { ...f, ...formData }
+                            : f
+                    ));
+                } else {
+                    const newFarmer = {
+                        ...formData,
+                        id: Date.now().toString(),
+                        registration_date: getCurrentDate()
+                    };
+                    setFarmers([...farmers, newFarmer]);
+                }
+                setFormData({ name: '', phone: '', address: '', status: 'active', notes: '' });
+                setShowForm(false);
+                setEditingFarmer(null);
+            };
+
+            const handleEdit = (farmer) => {
+                setFormData({
+                    name: farmer.name,
+                    phone: farmer.phone,
+                    address: farmer.address,
+                    status: farmer.status,
+                    notes: farmer.notes
+                });
+                setEditingFarmer(farmer);
+                setShowForm(true);
+            };
+
+            const toggleStatus = (farmerId) => {
+                setFarmers(farmers.map(f => 
+                    f.id === farmerId 
+                        ? { ...f, status: f.status === 'active' ? 'inactive' : 'active' }
+                        : f
+                ));
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <h1 className="text-3xl font-bold text-gray-900">{t.farmers}</h1>
+                        <button
+                            onClick={() => setShowForm(!showForm)}
+                            className="mt-4 md:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                        >
+                            <lucide.Plus className="h-4 w-4" />
+                            <span>{t.addNewFarmer}</span>
+                        </button>
+                    </div>
+
+                    {showForm && (
+                        <div className="bg-white rounded-lg card-shadow p-6">
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t.fullName}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t.phoneNumber}
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            pattern="[0-9]{10}"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t.address}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.address}
+                                        onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t.status}
+                                        </label>
+                                        <select
+                                            value={formData.status}
+                                            onChange={(e) => setFormData({...formData, status: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="active">{t.active}</option>
+                                            <option value="inactive">{t.inactive}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t.notes}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.notes}
+                                            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex space-x-3">
+                                    <button
+                                        type="submit"
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                                    >
+                                        {t.save}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowForm(false);
+                                            setEditingFarmer(null);
+                                            setFormData({ name: '', phone: '', address: '', status: 'active', notes: '' });
+                                        }}
+                                        className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                                    >
+                                        {t.cancel}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    <div className="bg-white rounded-lg card-shadow p-6">
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                placeholder={t.search}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full md:w-64 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredFarmers.map(farmer => (
+                                <div key={farmer.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h3 className="font-semibold text-lg">{farmer.name}</h3>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                            farmer.status === 'active' ? 'status-active' : 'status-inactive'
+                                        }`}>
+                                            {farmer.status === 'active' ? t.active : t.inactive}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2 text-sm text-gray-600">
+                                        <p><strong>Phone:</strong> {farmer.phone}</p>
+                                        <p><strong>Address:</strong> {farmer.address}</p>
+                                        <p><strong>Registered:</strong> {farmer.registration_date}</p>
+                                        {farmer.notes && <p><strong>Notes:</strong> {farmer.notes}</p>}
+                                    </div>
+                                    <div className="flex space-x-2 mt-4">
+                                        <button
+                                            onClick={() => handleEdit(farmer)}
+                                            className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                                        >
+                                            {t.edit}
+                                        </button>
+                                        <button
+                                            onClick={() => toggleStatus(farmer.id)}
+                                            className="flex-1 bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700"
+                                        >
+                                            Toggle
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const CollectionPage = ({ farmers, collections, setCollections, language }) => {
+            const t = translations[language];
+            const [formData, setFormData] = useState({
+                farmer_id: '',
+                farmer_name: '',
+                collection_date: getCurrentDate(),
+                session: 'morning',
+                quantity: '',
+                fat_percentage: '',
+                snf_percentage: '',
+                notes: ''
+            });
+            const [calculatedRate, setCalculatedRate] = useState(0);
+            const [totalAmount, setTotalAmount] = useState(0);
+
+            const activeFarmers = farmers.filter(f => f.status === 'active');
+
+            useEffect(() => {
+                if (formData.quantity && formData.fat_percentage && formData.snf_percentage) {
+                    const rate = findRate(parseFloat(formData.fat_percentage), parseFloat(formData.snf_percentage));
+                    setCalculatedRate(rate);
+                    setTotalAmount(rate * parseFloat(formData.quantity));
+                } else {
+                    setCalculatedRate(0);
+                    setTotalAmount(0);
+                }
+            }, [formData.quantity, formData.fat_percentage, formData.snf_percentage]);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                const newCollection = {
+                    ...formData,
+                    id: Date.now().toString(),
+                    quantity: parseFloat(formData.quantity),
+                    fat_percentage: parseFloat(formData.fat_percentage),
+                    snf_percentage: parseFloat(formData.snf_percentage),
+                    rate: calculatedRate,
+                    total_amount: totalAmount
+                };
+                setCollections([...collections, newCollection]);
+                setFormData({
+                    farmer_id: '',
+                    farmer_name: '',
+                    collection_date: getCurrentDate(),
+                    session: 'morning',
+                    quantity: '',
+                    fat_percentage: '',
+                    snf_percentage: '',
+                    notes: ''
+                });
+                setCalculatedRate(0);
+                setTotalAmount(0);
+            };
+
+            const handleFarmerChange = (e) => {
+                const farmerId = e.target.value;
+                const farmer = farmers.find(f => f.id === farmerId);
+                setFormData({
+                    ...formData,
+                    farmer_id: farmerId,
+                    farmer_name: farmer ? farmer.name : ''
+                });
+            };
+
+            return (
+                <div className="space-y-6">
+                    <h1 className="text-3xl font-bold text-gray-900">{t.dailyCollection}</h1>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2">
+                            <div className="bg-white rounded-lg card-shadow p-6">
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {t.farmer}
+                                            </label>
+                                            <select
+                                                value={formData.farmer_id}
+                                                onChange={handleFarmerChange}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            >
+                                                <option value="">{t.selectFarmer}</option>
+                                                {activeFarmers.map(farmer => (
+                                                    <option key={farmer.id} value={farmer.id}>{farmer.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {t.session}
+                                            </label>
+                                            <select
+                                                value={formData.session}
+                                                onChange={(e) => setFormData({...formData, session: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="morning">{t.morning}</option>
+                                                <option value="evening">{t.evening}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {t.quantity}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                value={formData.quantity}
+                                                onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {t.fatPercentage}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                value={formData.fat_percentage}
+                                                onChange={(e) => setFormData({...formData, fat_percentage: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {t.snfPercentage}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                value={formData.snf_percentage}
+                                                onChange={(e) => setFormData({...formData, snf_percentage: e.target.value})}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t.notes}
+                                        </label>
+                                        <textarea
+                                            value={formData.notes}
+                                            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            rows="3"
+                                        />
+                                    </div>
+
+                                    {calculatedRate > 0 && (
+                                        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-sm text-green-700">{t.rate}</p>
+                                                    <p className="text-lg font-semibold text-green-800">₹{calculatedRate}/L</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-green-700">{t.totalAmount}</p>
+                                                    <p className="text-lg font-semibold text-green-800">₹{totalAmount.toFixed(2)}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                                    >
+                                        Add Collection
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-1">
+                            <div className="bg-white rounded-lg card-shadow p-6">
+                                <h3 className="text-lg font-semibold mb-4">Recent Collections</h3>
+                                <div className="space-y-3">
+                                    {collections.slice(-5).reverse().map(collection => (
+                                        <div key={collection.id} className="border rounded-lg p-3">
+                                            <div className="font-medium text-sm">{collection.farmer_name}</div>
+                                            <div className="text-xs text-gray-600">
+                                                {collection.quantity}L - ₹{collection.total_amount}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const BalancePage = ({ farmers, collections, language }) => {
+            const t = translations[language];
+            const [selectedFarmer, setSelectedFarmer] = useState('');
+            const [startDate, setStartDate] = useState('');
+            const [endDate, setEndDate] = useState('');
+            const [balanceData, setBalanceData] = useState(null);
+
+            const handleCheckBalance = () => {
+                if (!selectedFarmer || !startDate || !endDate) return;
+
+                const farmerCollections = collections.filter(c => 
+                    c.farmer_id === selectedFarmer &&
+                    c.collection_date >= startDate &&
+                    c.collection_date <= endDate
+                );
+
+                const totalMilk = farmerCollections.reduce((sum, c) => sum + c.quantity, 0);
+                const totalEarnings = farmerCollections.reduce((sum, c) => sum + c.total_amount, 0);
+                const averageRate = totalMilk > 0 ? totalEarnings / totalMilk : 0;
+
+                setBalanceData({
+                    collections: farmerCollections,
+                    totalMilk,
+                    totalEarnings,
+                    averageRate
+                });
+            };
+
+            return (
+                <div className="space-y-6">
+                    <h1 className="text-3xl font-bold text-gray-900">{t.balance}</h1>
+
+                    <div className="bg-white rounded-lg card-shadow p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {t.farmer}
+                                </label>
+                                <select
+                                    value={selectedFarmer}
+                                    onChange={(e) => setSelectedFarmer(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">{t.selectFarmer}</option>
+                                    {farmers.map(farmer => (
+                                        <option key={farmer.id} value={farmer.id}>{farmer.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {t.startDate}
+                                </label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {t.endDate}
+                                </label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div className="flex items-end">
+                                <button
+                                    onClick={handleCheckBalance}
+                                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                                >
+                                    {t.checkBalance}
+                                </button>
+                            </div>
+                        </div>
+
+                        {balanceData && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <StatCard
+                                        title={t.totalMilk}
+                                        value={`${balanceData.totalMilk.toFixed(1)}L`}
+                                        icon={lucide.Droplets}
+                                        color="blue"
+                                    />
+                                    <StatCard
+                                        title={t.totalEarnings}
+                                        value={`₹${balanceData.totalEarnings.toFixed(0)}`}
+                                        icon={lucide.DollarSign}
+                                        color="green"
+                                    />
+                                    <StatCard
+                                        title={t.averageRate}
+                                        value={`₹${balanceData.averageRate.toFixed(2)}/L`}
+                                        icon={lucide.TrendingUp}
+                                        color="yellow"
+                                    />
+                                </div>
+
+                                <div className="bg-white border rounded-lg overflow-hidden">
+                                    <div className="px-6 py-4 border-b">
+                                        <h3 className="text-lg font-semibold">Collection History</h3>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Session</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rate</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                                {balanceData.collections.map(collection => (
+                                                    <tr key={collection.id}>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {collection.collection_date}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {collection.session === 'morning' ? t.morning : t.evening}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {collection.quantity}L
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            ₹{collection.rate}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            ₹{collection.total_amount}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const ReportsPage = ({ language }) => {
+            const t = translations[language];
+            return (
+                <div className="space-y-6">
+                    <h1 className="text-3xl font-bold text-gray-900">{t.reports}</h1>
+                    <div className="bg-white rounded-lg card-shadow p-12 text-center">
+                        <lucide.FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <h2 className="text-2xl font-semibold text-gray-700 mb-2">{t.comingSoon}</h2>
+                        <p className="text-gray-500">Advanced reporting features will be available soon.</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const Sidebar = ({ activeTab, setActiveTab, language, setLanguage, isOpen, setIsOpen }) => {
+            const t = translations[language];
+            
+            const menuItems = [
+                { id: 'dashboard', label: t.dashboard, icon: lucide.Home },
+                { id: 'farmers', label: t.farmers, icon: lucide.Users },
+                { id: 'collection', label: t.dailyCollection, icon: lucide.Droplets },
+                { id: 'balance', label: t.balance, icon: lucide.DollarSign },
+                { id: 'reports', label: t.reports, icon: lucide.FileText }
+            ];
+
+            return (
+                <>
+                    {/* Mobile overlay */}
+                    {isOpen && (
+                        <div 
+                            className="fixed inset-0 bg-black bg-opacity-50 lg:hidden z-20"
+                            onClick={() => setIsOpen(false)}
+                        />
+                    )}
+                    
+                    {/* Sidebar */}
+                    <div className={`
+                        fixed lg:static inset-y-0 left-0 z-30
+                        w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+                        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                    `}>
+                        <div className="p-6 border-b gradient-bg">
+                            <div className="flex items-center space-x-3">
+                                <lucide.Droplets className="h-8 w-8 text-white" />
+                                <h1 className="text-xl font-bold text-white">DairyCoop</h1>
+                            </div>
+                        </div>
+                        
+                        <div className="p-4">
+                            <div className="flex items-center justify-between mb-6">
+                                <span className="text-sm font-medium text-gray-600">Language</span>
+                                <button
+                                    onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
+                                    className="bg-gray-200 rounded-full p-1 hover:bg-gray-300 transition-colors"
+                                >
+                                    <span className="block w-8 h-4 text-xs font-medium text-center">
+                                        {language.toUpperCase()}
+                                    </span>
+                                </button>
+                            </div>
+                            
+                            <nav className="space-y-2">
+                                {menuItems.map(item => {
+                                    const Icon = item.icon;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                setActiveTab(item.id);
+                                                setIsOpen(false);
+                                            }}
+                                            className={`
+                                                w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left
+                                                transition-colors duration-200
+                                                ${activeTab === item.id 
+                                                    ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700' 
+                                                    : 'text-gray-600 hover:bg-gray-100'
+                                                }
+                                            `}
+                                        >
+                                            <Icon className="h-5 w-5" />
+                                            <span className="font-medium">{item.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        </div>
+                    </div>
+                </>
+            );
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [language, setLanguage] = useState('en');
+            const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [farmers, setFarmers] = useState(initialFarmers);
+            const [collections, setCollections] = useState(initialCollections);
+
+            const renderContent = () => {
+                switch (activeTab) {
+                    case 'dashboard':
+                        return <Dashboard farmers={farmers} collections={collections} language={language} />;
+                    case 'farmers':
+                        return <FarmersPage farmers={farmers} setFarmers={setFarmers} language={language} />;
+                    case 'collection':
+                        return <CollectionPage farmers={farmers} collections={collections} setCollections={setCollections} language={language} />;
+                    case 'balance':
+                        return <BalancePage farmers={farmers} collections={collections} language={language} />;
+                    case 'reports':
+                        return <ReportsPage language={language} />;
+                    default:
+                        return <Dashboard farmers={farmers} collections={collections} language={language} />;
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <div className="flex">
+                        <Sidebar 
+                            activeTab={activeTab} 
+                            setActiveTab={setActiveTab} 
+                            language={language}
+                            setLanguage={setLanguage}
+                            isOpen={sidebarOpen}
+                            setIsOpen={setSidebarOpen}
+                        />
+                        
+                        <div className="flex-1 lg:ml-0">
+                            {/* Mobile header */}
+                            <div className="lg:hidden bg-white shadow-sm border-b p-4 flex items-center justify-between">
+                                <button
+                                    onClick={() => setSidebarOpen(true)}
+                                    className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
+                                >
+                                    <lucide.Menu className="h-6 w-6" />
+                                </button>
+                                <h1 className="text-lg font-semibold">DairyCoop</h1>
+                                <div className="w-10"></div>
+                            </div>
+                            
+                            {/* Main content */}
+                            <main className="p-6">
+                                {renderContent()}
+                            </main>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
